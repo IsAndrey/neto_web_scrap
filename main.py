@@ -16,38 +16,35 @@ count_articles = 0
 
 def get_endpoint(page_number=1):
     """Получает эндпоинт по номеру страницы."""
-    if page_number == 1 or page_number > MAX_PAGES:
-        return r'https://habr.com/ru/articles/'
-    endpoint = r'/ru/articles/page' + '{:02}'.format(page_number) + r'/'
-    return WEB_PORTAL + endpoint
+    if page_number != 1 and page_number <= MAX_PAGES:
+        endpoint = r'/ru/articles/page' + '{:02}'.format(page_number) + r'/'
+        return WEB_PORTAL + endpoint
+    return r'https://habr.com/ru/articles/'
 
 
 def article_is_found(preview, full_text=''):
     """Проверяет наличие в тексте ключевых слов."""
     if len(KEYWORDS) == 0:
         return True
-    text_to_search = preview
-    if full_text != '':
-        text_to_search = full_text
-    return RE_COMPILE.search(text_to_search) is not None
+    return RE_COMPILE.search(preview) or RE_COMPILE.search(full_text)
 
 
 def extract_text(tag):
     """Получает текст из тэга."""
-    if tag.sting is not None:
+    if tag.string is not None:
         return tag.string
-    result = ''
-    for s in tag.stripped_strings:
-        result += s
-    return result
+    return ''.join(tag.stripped_strings)
 
 
 def get_web_page(url):
     """Получает текст вэб страницы."""
     headers = FakeHttpHeader().as_header_dict()
-    response = requests.get(url=url, headers=headers)
-    if response.status_code == 200:
-        return response.text
+    try:
+        response = requests.get(url=url, headers=headers)
+        if response.status_code == 200:
+            return response.text
+    except Exception as e:
+        print(f'Ошибка запроса к {url} - {e}')
     return None
 
 
@@ -127,4 +124,4 @@ if __name__=='__main__':
     for t in threads:
         t.join()
 
-    print(f'ВСЕГО найдено {count_articles} статей, содержащих ключевые слова {', '.join(KEYWORDS)}.')
+    print(f'ВСЕГО найдено {count_articles} статей, содержащих ключевые слова {", ".join(KEYWORDS)}.')
